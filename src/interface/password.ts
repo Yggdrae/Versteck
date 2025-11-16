@@ -1,4 +1,5 @@
 export interface IPassword {
-  account: string;
-  encryptedPass: string;
+  uuid: string;
+  name: string;
+  pass: string;
 }

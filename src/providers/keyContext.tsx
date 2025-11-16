@@ -1,17 +1,14 @@
-import React, {
-    createContext,
-    Dispatch,
-    ReactNode,
-    SetStateAction,
-    useContext,
-    useState,
-} from "react";
+import React, { createContext, Dispatch, ReactNode, SetStateAction, useContext, useState } from "react";
+
+type passesProps = {
+  uuid: string;
+  name: string;
+  pass: string;
+};
 
 type KeyContextType = {
-  Key: string;
-  setKey: Dispatch<SetStateAction<string>>;
-  masterKey: string;
-  setMasterKey: Dispatch<SetStateAction<string>>;
+  keys: passesProps[];
+  setKeys: Dispatch<SetStateAction<passesProps[]>>;
 };
 
 export const KeyContext = createContext<KeyContextType | undefined>(undefined);
@@ -21,19 +18,14 @@ type KeyProviderProps = {
 };
 
 export const KeyProvider = ({ children }: KeyProviderProps) => {
-  const [Key, setKey] = useState<string>("");
-  const [masterKey, setMasterKey] = useState<string>("");
+  const [keys, setKeys] = useState<passesProps[]>([]);
 
   const contextValue: KeyContextType = {
-    Key,
-    setKey,
-    masterKey,
-    setMasterKey,
+    keys,
+    setKeys,
   };
 
-  return (
-    <KeyContext.Provider value={contextValue}>{children}</KeyContext.Provider>
-  );
+  return <KeyContext.Provider value={contextValue}>{children}</KeyContext.Provider>;
 };
 
 export const useKey = () => {

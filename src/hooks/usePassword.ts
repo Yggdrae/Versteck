@@ -18,10 +18,11 @@ export const usePasswords = () => {
 
       return [
         {
-            account: "github",
-            encryptedPass: "AAAA"
-        }
-    ];
+          uuid: "aaa",
+          name: "github",
+          pass: "AAAA",
+        },
+      ];
     },
   });
 };
