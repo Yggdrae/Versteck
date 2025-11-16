@@ -1,14 +1,40 @@
+import DeleteDialog from "@/components/home/DeleteDialog";
+import PassCard from "@/components/home/PassCard";
 import { ThemedSafeAreaView } from "@/components/ThemedSafeArea";
-import { usePasswords } from "@/hooks/usePassword";
-import React from "react";
+import { IPassword } from "@/interface/password";
+import { useKey } from "@/providers/keyContext";
+import * as Clipboard from "expo-clipboard";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
-1;
+import { ActivityIndicator, Snackbar, Text } from "react-native-paper";
 
 export default function Home() {
-  const { data: passwords, isLoading, isError, error } = usePasswords();
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState<boolean>(false);
+  const [editDialogVisible, setEditDialogVisible] = useState<boolean>(false);
+  const [pressedItem, setPressedItem] = useState<IPassword>({ uuid: "", name: "", pass: "" });
 
-  if (isLoading) {
+  const openDialog = (item: IPassword, type: "delete" | "edit") => {
+    if (type === "delete") {
+      setPressedItem(item);
+      setDeleteDialogVisible(true);
+    }
+  };
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const { keys } = useKey();
+
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackBarMessage, setSnackBarMessage] = useState("");
+
+  const copyToClipboard = async (pass: string) => {
+    await Clipboard.setStringAsync(pass);
+    setSnackBarMessage("Senha copiada para a área de transferência!");
+    setSnackbarVisible(true);
+  };
+
+  const onDismissSnackbar = () => setSnackbarVisible(false);
+
+  if (loading) {
     return (
       <ThemedSafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
@@ -19,17 +45,7 @@ export default function Home() {
     );
   }
 
-  if (isError) {
-    return (
-      <ThemedSafeAreaView style={styles.container}>
-        <View style={styles.emptyContainer}>
-          <Text>Erro ao carregar senhas: {error.message}</Text>
-        </View>
-      </ThemedSafeAreaView>
-    );
-  }
-
-  const passwordList = passwords || [];
+  const passwordList = keys || [];
 
   return (
     <ThemedSafeAreaView style={styles.container}>
@@ -39,9 +55,25 @@ export default function Home() {
         </View>
       ) : (
         <ScrollView style={styles.contentContainer}>
-          <Text variant="titleLarge">Suas {passwordList.length} senhas</Text>
+          {passwordList.map((password) => (
+            <PassCard key={password.uuid} item={password} copyToClipboard={copyToClipboard} openDialog={openDialog} />
+          ))}
         </ScrollView>
       )}
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={onDismissSnackbar}
+        duration={2000}
+        action={{
+          label: "OK",
+          onPress: onDismissSnackbar,
+        }}
+      >
+        {snackBarMessage}
+      </Snackbar>
+
+      <DeleteDialog visible={deleteDialogVisible} setVisible={setDeleteDialogVisible} item={pressedItem} />
     </ThemedSafeAreaView>
   );
 }
@@ -55,7 +87,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    gap: 8,
+    gap: 20,
     padding: 24,
   },
   emptyContainer: {
