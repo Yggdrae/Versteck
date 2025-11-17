@@ -1,3 +1,4 @@
+import { ThemedSafeAreaView } from "@/components/ThemedSafeArea";
 import { ThemedView } from "@/components/ThemedView";
 import { useUser } from "@/providers/userContext";
 import { decryptVault, EncryptedPayload } from "@/service/encrypt";
@@ -54,64 +55,72 @@ export default function Index() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ThemedView style={styles.container}>
-        <View style={styles.header}>
-          <Avatar.Icon
-            size={100}
-            icon="shield-key"
-            style={{ backgroundColor: paperTheme.colors.primaryContainer }}
-            color={paperTheme.colors.primary}
-          />
-          <Text variant="displaySmall" style={{ marginTop: 16, fontWeight: "bold", color: paperTheme.colors.primary }}>
-            Versteck
-          </Text>
-          <Text variant="titleMedium" style={{ opacity: 0.6 }}>
-            Seu Cofre Pessoal
-          </Text>
-        </View>
+    <ThemedSafeAreaView>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ThemedView style={styles.container}>
+          <View style={styles.header}>
+            <Avatar.Icon
+              size={100}
+              icon="shield-key"
+              style={{ backgroundColor: paperTheme.colors.primaryContainer }}
+              color={paperTheme.colors.primary}
+            />
+            <Text
+              variant="displaySmall"
+              style={{ marginTop: 16, fontWeight: "bold", color: paperTheme.colors.primary }}
+            >
+              Versteck
+            </Text>
+            <Text variant="titleMedium" style={{ opacity: 0.6 }}>
+              Seu Cofre Pessoal
+            </Text>
+          </View>
 
-        <View style={styles.form}>
-          <TextInput
-            label="Chave Mestra"
-            mode="outlined"
-            value={inputValue}
-            onChangeText={(text) => {
-              setInputValue(text);
-              if (error) setError("");
-            }}
-            secureTextEntry={!showPassword}
-            error={!!error}
-            disabled={isLoading}
-            autoCapitalize="none"
-            right={
-              <TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />
-            }
-          />
+          <View style={styles.form}>
+            <TextInput
+              label="Chave Mestra"
+              mode="outlined"
+              value={inputValue}
+              onChangeText={(text) => {
+                setInputValue(text);
+                if (error) setError("");
+              }}
+              secureTextEntry={!showPassword}
+              error={!!error}
+              disabled={isLoading}
+              autoCapitalize="none"
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+            />
 
-          <HelperText type="error" visible={!!error}>
-            {error}
-          </HelperText>
+            <HelperText type="error" visible={!!error}>
+              {error}
+            </HelperText>
 
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={isLoading}
-            disabled={isLoading}
-            contentStyle={{ height: 50 }}
-            labelStyle={{ fontSize: 18 }}
-          >
-            {isLoading ? "Verificando..." : "Entrar"}
-          </Button>
-        </View>
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={isLoading}
+              disabled={isLoading}
+              contentStyle={{ height: 50 }}
+              labelStyle={{ fontSize: 18 }}
+            >
+              {isLoading ? "Verificando..." : "Entrar"}
+            </Button>
+          </View>
 
-        <View style={styles.footer}>
-          <Text variant="labelSmall" style={{ textAlign: "center", opacity: 0.4 }}>
-            Criptografia Local • Zero-Knowledge
-          </Text>
-        </View>
-      </ThemedView>
-    </TouchableWithoutFeedback>
+          <View style={styles.footer}>
+            <Text variant="labelSmall" style={{ textAlign: "center", opacity: 0.4 }}>
+              Criptografia Local • Zero-Knowledge
+            </Text>
+          </View>
+        </ThemedView>
+      </TouchableWithoutFeedback>
+    </ThemedSafeAreaView>
   );
 }
 
