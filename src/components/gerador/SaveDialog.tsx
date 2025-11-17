@@ -1,5 +1,9 @@
+import { useSavePassword } from "@/hooks/usePassword";
+import { useUser } from "@/providers/userContext";
+import { useQueryClient } from "@tanstack/react-query";
+import * as Crypto from "expo-crypto";
 import { useState } from "react";
-import { Button, Dialog, Text, TextInput } from "react-native-paper";
+import { Button, Dialog, HelperText, Text, TextInput } from "react-native-paper";
 
 interface SaveDialogProps {
   pass: string;
@@ -16,33 +20,82 @@ export default function SaveDialog({
   setSnackbarVisible,
   setSaveDialogVisible,
 }: SaveDialogProps) {
+  const { masterKey } = useUser();
+  const queryClient = useQueryClient();
+
   const [siteName, setSiteName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSavePassword = () => {
-    console.log("Salvou a senha ", pass);
-    setSnackBarMessage("Senha salva com sucesso!");
-    setSnackbarVisible(true);
+  const handleSavePassword = async () => {
+    if (!siteName.trim()) {
+      setError("O nome é obrigatório");
+      return;
+    }
 
-    setSaveDialogVisible(false);
-    setSiteName("");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const newUuid = Crypto.randomUUID();
+
+      await useSavePassword(masterKey, {
+        uuid: newUuid,
+        name: siteName,
+        pass: pass,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["passwords"] });
+
+      setSnackBarMessage("Senha salva com sucesso!");
+      setSnackbarVisible(true);
+
+      setSaveDialogVisible(false);
+      setSiteName("");
+    } catch (err) {
+      console.error("Erro no SaveDialog:", err);
+
+      setSnackBarMessage("Erro ao salvar a senha. Tente novamente.");
+      setSnackbarVisible(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDismiss = () => {
+    if (!isLoading) {
+      setSaveDialogVisible(false);
+      setError("");
+    }
   };
 
   return (
-    <Dialog visible={saveDialogVisible} onDismiss={() => setSaveDialogVisible(false)}>
+    <Dialog visible={saveDialogVisible} onDismiss={handleDismiss}>
       <Dialog.Title>Salvar Senha</Dialog.Title>
       <Dialog.Content>
         <Text style={{ marginBottom: 15 }}>Onde esta senha será usada?</Text>
+
         <TextInput
-          label="Nome do Site, App ou Serviço (URL)"
+          label="Nome do Site, App ou Serviço"
+          placeholder="Ex: Instagram, Banco X..."
           value={siteName}
-          onChangeText={setSiteName}
+          onChangeText={(t) => {
+            setSiteName(t);
+            if (error) setError("");
+          }}
           mode="outlined"
           autoFocus
+          disabled={isLoading}
+          error={!!error}
         />
+        {error ? <HelperText type="error">{error}</HelperText> : null}
       </Dialog.Content>
       <Dialog.Actions>
-        <Button onPress={() => setSaveDialogVisible(false)}>Cancelar</Button>
-        <Button onPress={handleSavePassword} disabled={siteName.trim() === ""}>
+        <Button onPress={handleDismiss} disabled={isLoading}>
+          Cancelar
+        </Button>
+
+        <Button onPress={handleSavePassword} loading={isLoading} disabled={isLoading || siteName.trim() === ""}>
           Salvar
         </Button>
       </Dialog.Actions>
