@@ -1,7 +1,7 @@
 import { IPassword } from "@/interface/password";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
-import { Card, IconButton, TextInput } from "react-native-paper";
+import { Card, IconButton, TextInput, useTheme } from "react-native-paper";
 
 interface PassCardProps {
   item: IPassword;
@@ -11,6 +11,7 @@ interface PassCardProps {
 
 export default function PassCard({ item, openDialog, copyToClipboard }: PassCardProps) {
   const [showPass, setShowPass] = useState<boolean>(false);
+  const theme = useTheme();
 
   return (
     <Card style={styles.card}>
@@ -31,8 +32,17 @@ export default function PassCard({ item, openDialog, copyToClipboard }: PassCard
           }
         />
       </Card.Content>
+
       <Card.Actions style={styles.actions}>
-        <IconButton icon="delete-outline" onPress={() => openDialog(item, "delete")} size={24} />
+        <IconButton
+          icon="delete-outline"
+          iconColor={theme.colors.error}
+          onPress={() => openDialog(item, "delete")}
+          size={24}
+        />
+
+        <IconButton icon="pencil-outline" onPress={() => openDialog(item, "edit")} size={24} />
+
         <IconButton icon="content-copy" onPress={() => copyToClipboard(item.pass)} size={24} />
       </Card.Actions>
     </Card>
