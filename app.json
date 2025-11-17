@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "versteck",
+    "name": "Versteck",
     "slug": "versteck",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -46,6 +46,12 @@
       "eas": {
         "projectId": "90e99d55-e11e-40cc-8b30-e489687262ad"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/90e99d55-e11e-40cc-8b30-e489687262ad"
     }
   }
 }
