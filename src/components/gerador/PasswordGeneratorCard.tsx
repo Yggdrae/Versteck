@@ -20,15 +20,14 @@ export default function PasswordGeneratorCard({ copyToClipboard, showSaveDialog 
   const [length, setLength] = useState(32);
 
   const handleGenerate = () => {
-    setGeneratedPassword(
-      generatePassword({
-        length,
-        containsNumeric,
-        containsLowerCase,
-        containsUpperCase,
-        containsSpecialChar,
-      })
-    );
+    const newPass = generatePassword({
+      length,
+      containsNumeric,
+      containsLowerCase,
+      containsUpperCase,
+      containsSpecialChar,
+    });
+    setGeneratedPassword(newPass);
   };
 
   const handleBlur = () => {
@@ -46,9 +45,7 @@ export default function PasswordGeneratorCard({ copyToClipboard, showSaveDialog 
 
   const handleLengthChange = (value: string) => {
     const cleanedValue = value.replace(/[^0-9]/g, "");
-
     const numValue = Number(cleanedValue);
-
     let finalValue = numValue;
 
     if (numValue > MAX_LENGTH) {
@@ -81,12 +78,13 @@ export default function PasswordGeneratorCard({ copyToClipboard, showSaveDialog 
             ) : null
           }
         />
+
         <View style={styles.settingRow}>
           <Text>Incluir Números?</Text>
           <Switch value={containsNumeric} onValueChange={setContainsNumeric} />
         </View>
         <View style={styles.settingRow}>
-          <Text>Incluir Maiusculas?</Text>
+          <Text>Incluir Maiúsculas?</Text>
           <Switch value={containsUpperCase} onValueChange={setContainsUpperCase} />
         </View>
         <View style={styles.settingRow}>
@@ -117,11 +115,16 @@ export default function PasswordGeneratorCard({ copyToClipboard, showSaveDialog 
         </View>
       </Card.Content>
 
-      <Card.Actions>
+      <Card.Actions style={styles.actions}>
         <Button icon="refresh" mode="contained" onPress={handleGenerate}>
           Gerar
         </Button>
-        <Button icon="content-save-outline" onPress={() => showSaveDialog(generatedPassword)}>
+        <Button
+          icon="content-save-outline"
+          mode="outlined"
+          onPress={() => showSaveDialog(generatedPassword)}
+          disabled={!generatedPassword}
+        >
           Salvar
         </Button>
       </Card.Actions>
@@ -163,12 +166,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 0,
   },
-  modal: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignContent: "center",
-    margin: 30,
+  actions: {
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
 });
