@@ -1,50 +1,97 @@
-# Welcome to your Expo app 👋
+# 🛡️ Versteck
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey.svg)
+![Stack](https://img.shields.io/badge/tech-React%20Native%20%7C%20Expo-violet.svg)
 
-## Get started
+**Versteck** (German for _hiding place_ or _cache_) is a minimalist, **Zero-Knowledge**, offline-first password manager built with React Native and Expo.
 
-1. Install dependencies
+It prioritizes security and privacy by ensuring that your data is encrypted locally on your device using military-grade standards. No servers, no cloud, no tracking. **You own your keys.**
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## ✨ Features
 
-   ```bash
-   npx expo start
-   ```
+- **Zero-Knowledge Architecture:** Your Master Key never leaves your device and is never stored.
+- **Strong Encryption:** Uses **AES-256-GCM** for authenticated encryption.
+- **Secure Key Derivation:** Uses **PBKDF2** (100,000 iterations, SHA-512) to protect against brute-force attacks.
+- **Password Generator:** Configurable generator (length, special chars, numbers) for strong credentials.
+- **Offline Storage:** Vault is stored as an encrypted JSON blob using the device's file system.
+- **Clipboard Management:** Copy passwords securely with a single tap.
+- **Dark/Light Mode:** Themed UI using React Native Paper.
+- **Data Management:** Features to export backups and securely wipe all data.
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🏗️ Tech Stack & Architecture
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Core Technologies
 
-## Get a fresh project
+- **Framework:** React Native (Expo SDK 52+)
+- **Language:** TypeScript
+- **UI Library:** React Native Paper
+- **State Management:** React Query (TanStack Query) & Context API
+- **Package Manager:** Yarn (Recommended for native linking stability)
 
-When you're ready, run:
+### Security Stack
+
+This is the heart of the application. We use high-performance native modules to ensure encryption doesn't freeze the UI.
+
+- **Cryptography:** `react-native-quick-crypto` (Fast C++ implementation of Node's crypto module).
+- **Randomness:** `react-native-get-random-values` (CSPRNG).
+- **File System:** `expo-file-system` (Modern File/Paths API).
+
+### The "Save" Workflow
+
+1.  **Read:** The encrypted file is read from the disk.
+2.  **Decrypt:** The file is decrypted in memory using the session Key.
+3.  **Modify:** The new password is added to the array in memory.
+4.  **Encrypt:** The entire array is re-encrypted with a **new random Salt and IV**.
+5.  **Write:** The old file is overwritten with the new encrypted blob.
+
+---
+
+## 🚀 Installation & Running
+
+Prerequisites:
+
+- Node.js
+- **Yarn**
+- Android Studio
 
 ```bash
-npm run reset-project
+# 1. Clone the repository
+git clone https://github.com/Yggdrae/Versteck.git
+cd versteck
+
+# 2. Install dependencies
+yarn install
+
+# 3. Run on Android (Development Build)
+# Note: You cannot use Expo Go because of the native crypto libraries.
+yarn android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## ⚠️ Important Security Notice
 
-## Learn more
+Versteck is a local-only vault.
 
-To learn more about developing your project with Expo, look at the following resources:
+If you forget your Master Key, your data is mathematically lost forever. There is no "Reset Password" button.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+If you lose your device or uninstall the app without a backup, your passwords are gone.
 
-## Join the community
+Recommendation: Regularly use the "Export Backup" feature in Settings and store the encrypted file in a separate secure location.
 
-Join our community of developers creating universal apps.
+## 🤝 Contributing
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+Fork the project
+
+Create your feature branch (git checkout -b feature/AmazingFeature)
+
+Commit your changes (git commit -m 'Add some AmazingFeature')
+
+Push to the branch (git push origin feature/AmazingFeature)
+
+Open a Pull Request
