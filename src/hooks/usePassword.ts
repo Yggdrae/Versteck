@@ -57,7 +57,7 @@ export const useSavePassword = async (masterKey: string, newPassword: IPassword)
 };
 
 export const useEditPassword = async (masterKey: string, updatedItem: IPassword) => {
-  console.log(`✏️ Editando item: ${updatedItem.uuid}`);
+  console.log(`Editando item: ${updatedItem.uuid}`);
 
   try {
     const content = await readVaultFile();
@@ -80,7 +80,7 @@ export const useEditPassword = async (masterKey: string, updatedItem: IPassword)
 };
 
 export const useDeletePassword = async (masterKey: string, itemUuid: string) => {
-  console.log(`🗑️ Iniciando exclusão do item: ${itemUuid}`);
+  console.log(`Iniciando exclusão do item: ${itemUuid}`);
 
   try {
     const content = await readVaultFile();
