@@ -57,7 +57,6 @@ Prerequisites:
 
 - Node.js
 - **Yarn**
-- Android Studio
 
 ```bash
 # 1. Clone the repository
