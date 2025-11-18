@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import React, { useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Button, Icon, Snackbar, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Button, Icon, Portal, Snackbar, Text, useTheme } from "react-native-paper";
 
 export default function Home() {
   const theme = useTheme();
@@ -96,17 +96,20 @@ export default function Home() {
         />
       )}
 
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={onDismissSnackbar}
-        duration={2000}
-        action={{
-          label: "OK",
-          onPress: onDismissSnackbar,
-        }}
-      >
-        {snackBarMessage}
-      </Snackbar>
+      <Portal>
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={onDismissSnackbar}
+          duration={2000}
+          wrapperStyle={{ bottom: 80 }}
+          action={{
+            label: "OK",
+            onPress: onDismissSnackbar,
+          }}
+        >
+          {snackBarMessage}
+        </Snackbar>
+      </Portal>
 
       <DeleteDialog visible={deleteDialogVisible} setVisible={setDeleteDialogVisible} item={pressedItem} />
       <EditDialog visible={editDialogVisible} setVisible={setEditDialogVisible} item={pressedItem} />

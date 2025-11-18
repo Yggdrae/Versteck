@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
-import { Snackbar } from "react-native-paper";
+import { Portal, Snackbar } from "react-native-paper";
 
 export default function Gerador() {
   const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
@@ -45,17 +45,20 @@ export default function Gerador() {
           setSaveDialogVisible={setSaveDialogVisible}
         />
 
-        <Snackbar
-          visible={snackbarVisible}
-          onDismiss={onDismissSnackbar}
-          duration={2000}
-          action={{
-            label: "OK",
-            onPress: onDismissSnackbar,
-          }}
-        >
-          {snackBarMessage}
-        </Snackbar>
+        <Portal>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={onDismissSnackbar}
+            duration={2000}
+            wrapperStyle={{ bottom: 80 }}
+            action={{
+              label: "OK",
+              onPress: onDismissSnackbar,
+            }}
+          >
+            {snackBarMessage}
+          </Snackbar>
+        </Portal>
       </ThemedView>
     </ThemedSafeAreaView>
   );
