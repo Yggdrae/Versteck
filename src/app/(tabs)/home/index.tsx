@@ -122,8 +122,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   contentContainer: {
-    flex: 1,
-    gap: 20,
+    gap: 12,
     padding: 24,
   },
   emptyContainer: {
