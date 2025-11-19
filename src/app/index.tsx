@@ -10,45 +10,54 @@ import { Avatar, Button, HelperText, Text, TextInput, useTheme } from "react-nat
 
 export default function Index() {
   const paperTheme = useTheme();
-  const { replace } = useRouter();
+  const { replace, push } = useRouter();
   const { setMasterKey } = useUser();
 
-  const [inputValue, setInputValue] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const [masterKeyInput, setMasterKeyInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [masterKeyError, setMasterKeyError] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    if (!inputValue) {
-      setError("Preencha a chave mestra");
-      return;
+    let hasError = false;
+    if (!emailInput || !emailInput.includes("@")) {
+      setEmailError("E-mail inválido");
+      hasError = true;
     }
-    if (inputValue.length < 4) {
-      setError("A chave deve ter no mínimo 4 caracteres");
-      return;
+    if (!masterKeyInput || masterKeyInput.length < 4) {
+      setMasterKeyError("Senha inválida");
+      hasError = true;
     }
+    if (hasError) return;
 
     Keyboard.dismiss();
-    setError("");
+    setEmailError("");
+    setMasterKeyError("");
     setIsLoading(true);
 
     try {
-      const content = await readVaultFile();
+      const localContent = await readVaultFile();
 
-      if (!content) {
-        setMasterKey(inputValue);
-        replace("/(tabs)/home");
-      } else {
-        const payload: EncryptedPayload = JSON.parse(content);
-
-        await decryptVault(inputValue, payload);
-
-        setMasterKey(inputValue);
-        replace("/(tabs)/home");
+      if (!localContent) {
+        setMasterKeyError("Nenhum cofre encontrado. Crie uma conta.");
+        setIsLoading(false);
+        return;
       }
+
+      const payload: EncryptedPayload = JSON.parse(localContent);
+
+      await decryptVault(masterKeyInput, payload);
+
+      setMasterKey(masterKeyInput);
+      replace("/(tabs)/home");
+
     } catch (err) {
       console.error(err);
-      setError("Chave mestra incorreta. Tente novamente.");
+      setMasterKeyError("Chave mestra incorreta. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +67,7 @@ export default function Index() {
     <ThemedSafeAreaView>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ThemedView style={styles.container}>
+
           <View style={styles.header}>
             <Avatar.Icon
               size={100}
@@ -78,15 +88,32 @@ export default function Index() {
 
           <View style={styles.form}>
             <TextInput
+              label="E-mail"
+              mode="outlined"
+              value={emailInput}
+              onChangeText={(text) => {
+                setEmailInput(text);
+                if (emailError) setEmailError("");
+              }}
+              error={!!emailError}
+              disabled={isLoading}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <HelperText type="error" visible={!!emailError}>
+              {emailError}
+            </HelperText>
+
+            <TextInput
               label="Chave Mestra"
               mode="outlined"
-              value={inputValue}
+              value={masterKeyInput}
               onChangeText={(text) => {
-                setInputValue(text);
-                if (error) setError("");
+                setMasterKeyInput(text);
+                if (masterKeyError) setMasterKeyError("");
               }}
               secureTextEntry={!showPassword}
-              error={!!error}
+              error={!!masterKeyError}
               disabled={isLoading}
               autoCapitalize="none"
               right={
@@ -96,9 +123,8 @@ export default function Index() {
                 />
               }
             />
-
-            <HelperText type="error" visible={!!error}>
-              {error}
+            <HelperText type="error" visible={!!masterKeyError}>
+              {masterKeyError}
             </HelperText>
 
             <Button
@@ -109,13 +135,23 @@ export default function Index() {
               contentStyle={{ height: 50 }}
               labelStyle={{ fontSize: 18 }}
             >
-              {isLoading ? "Verificando..." : "Entrar"}
+              {isLoading ? "Descriptografando..." : "Entrar"}
+            </Button>
+
+            <Button
+              mode="outlined"
+              onPress={() => push("/cadastro")}
+              disabled={isLoading}
+              contentStyle={{ height: 50 }}
+              labelStyle={{ fontSize: 18 }}
+            >
+              Criar Conta
             </Button>
           </View>
 
           <View style={styles.footer}>
             <Text variant="labelSmall" style={{ textAlign: "center", opacity: 0.4 }}>
-              Criptografia Local • Zero-Knowledge
+              Criptografia Zero-Knowledge
             </Text>
           </View>
         </ThemedView>
@@ -132,10 +168,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   form: {
-    gap: 10,
+    gap: 5,
   },
   footer: {
     position: "absolute",
