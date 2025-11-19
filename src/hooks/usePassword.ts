@@ -1,8 +1,24 @@
 import { IPassword } from "@/interface/password";
 import { useUser } from "@/providers/userContext";
+import { api } from "@/service/api";
 import { decryptVault, EncryptedPayload, encryptVault } from "@/service/encrypt";
 import { readVaultFile, writeVaultFile } from "@/service/storage";
 import { useQuery } from "@tanstack/react-query";
+
+const syncVaultWithServer = async (payload: EncryptedPayload) => {
+  try {
+    await api.put("/vault", {
+      vaultData: payload.encryptedData,
+      vaultIv: payload.iv,
+      vaultTag: payload.tag,
+      kdfSalt: payload.salt,
+    });
+    console.log("Cofre sincronizado com a nuvem!");
+  } catch (error) {
+    console.error("Falha ao sincronizar com a nuvem (dados salvos apenas localmente)", error);
+    // Aqui posso adicionar lógica de "fila de sync" para tentar novamente, talvez...
+  }
+};
 
 export const useLoadPasswords = () => {
   const { masterKey } = useUser();
@@ -13,10 +29,7 @@ export const useLoadPasswords = () => {
       if (!masterKey) return [];
 
       const content = await readVaultFile();
-
-      if (!content) {
-        return [];
-      }
+      if (!content) return [];
 
       try {
         const payload: EncryptedPayload = JSON.parse(content);
@@ -45,9 +58,9 @@ export const useSavePassword = async (masterKey: string, newPassword: IPassword)
 
     const newPayload = await encryptVault(masterKey, currentVault);
 
-    const fileString = JSON.stringify(newPayload);
+    await writeVaultFile(JSON.stringify(newPayload));
 
-    await writeVaultFile(fileString);
+    await syncVaultWithServer(newPayload);
 
     return true;
   } catch (error) {
@@ -57,8 +70,6 @@ export const useSavePassword = async (masterKey: string, newPassword: IPassword)
 };
 
 export const useEditPassword = async (masterKey: string, updatedItem: IPassword) => {
-  console.log(`Editando item: ${updatedItem.uuid}`);
-
   try {
     const content = await readVaultFile();
     if (!content) throw new Error("Cofre vazio.");
@@ -69,9 +80,11 @@ export const useEditPassword = async (masterKey: string, updatedItem: IPassword)
     const newVault = currentVault.map((item) => (item.uuid === updatedItem.uuid ? updatedItem : item));
 
     const newPayload = await encryptVault(masterKey, newVault);
+
     await writeVaultFile(JSON.stringify(newPayload));
 
-    console.log("Senha atualizada com sucesso!");
+    await syncVaultWithServer(newPayload);
+
     return true;
   } catch (error) {
     console.error("Erro ao editar senha:", error);
@@ -80,14 +93,9 @@ export const useEditPassword = async (masterKey: string, updatedItem: IPassword)
 };
 
 export const useDeletePassword = async (masterKey: string, itemUuid: string) => {
-  console.log(`Iniciando exclusão do item: ${itemUuid}`);
-
   try {
     const content = await readVaultFile();
-
-    if (!content) {
-      throw new Error("Cofre não encontrado para exclusão.");
-    }
+    if (!content) throw new Error("Cofre não encontrado.");
 
     const payload: EncryptedPayload = JSON.parse(content);
     const currentVault = (await decryptVault(masterKey, payload)) as IPassword[];
@@ -96,10 +104,10 @@ export const useDeletePassword = async (masterKey: string, itemUuid: string) => 
 
     const newPayload = await encryptVault(masterKey, newVault);
 
-    const fileString = JSON.stringify(newPayload);
-    await writeVaultFile(fileString);
+    await writeVaultFile(JSON.stringify(newPayload));
 
-    console.log("Senha excluída e cofre re-criptografado com sucesso!");
+    await syncVaultWithServer(newPayload);
+
     return true;
   } catch (error) {
     console.error("Erro ao excluir senha:", error);
