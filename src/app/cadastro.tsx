@@ -1,28 +1,25 @@
 import { ThemedSafeAreaView } from "@/components/ThemedSafeArea";
 import { ThemedView } from "@/components/ThemedView";
+import { useRegister } from "@/hooks/useRegister"; // Importe o novo hook
 import { useUser } from "@/providers/userContext";
-import { encryptVault } from "@/service/encrypt";
 import { writeVaultFile } from "@/service/storage";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Keyboard, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
 import { Avatar, Button, HelperText, Text, TextInput, useTheme } from "react-native-paper";
 
-const registerApi = async (payload: any) => {
-    return { token: "fake-jwt-token" };
-};
-
 export default function Cadastro() {
     const paperTheme = useTheme();
     const { replace, back } = useRouter();
     const { setMasterKey } = useUser();
+
+    const { mutateAsync: registerUser, isPending: isLoading } = useRegister();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
@@ -59,24 +56,21 @@ export default function Cadastro() {
         if (!validate()) return;
 
         Keyboard.dismiss();
-        setIsLoading(true);
 
         try {
-            const emptyVault: any = [];
-
-            const encryptedPayload = await encryptVault(password, emptyVault);
-
-            const apiPayload = {
+            const response = await registerUser({
                 email: email,
-                salt: encryptedPayload.salt,
-                vaultData: encryptedPayload.encryptedData,
-                vaultIv: encryptedPayload.iv
+                masterKeyInput: password
+            });
+
+            const localPayload = {
+                encryptedData: response.vaultData,
+                salt: response.kdfSalt,
+                iv: response.vaultIv,
+                tag: response.vaultTag
             };
 
-            console.log("Enviando para API:", apiPayload);
-            const response = await registerApi(apiPayload);
-
-            await writeVaultFile(JSON.stringify(encryptedPayload));
+            await writeVaultFile(JSON.stringify(localPayload));
 
             setMasterKey(password);
 
@@ -84,11 +78,10 @@ export default function Cadastro() {
                 { text: "OK", onPress: () => replace("/(tabs)/home") }
             ]);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            Alert.alert("Erro", "Falha ao criar conta. Tente novamente.");
-        } finally {
-            setIsLoading(false);
+            const msg = err?.response?.data?.message || "Falha ao criar conta. Tente novamente.";
+            Alert.alert("Erro", msg);
         }
     };
 
