@@ -1,5 +1,10 @@
 import { Buffer } from "buffer";
-const { pbkdf2Sync, createCipheriv, createDecipheriv, randomBytes } = require("react-native-quick-crypto");
+const {
+  pbkdf2Sync,
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+} = require("react-native-quick-crypto");
 
 const KEY_LENGTH = 32;
 const SALT_LENGTH = 16;
@@ -16,14 +21,39 @@ export interface EncryptedPayload {
   tag: string;
 }
 
-export async function encryptVault(masterKey: string, data: any): Promise<EncryptedPayload> {
+export async function encryptVault(
+  keyOrPassword: string | Buffer,
+  data: any,
+  providedSaltBase64?: string
+): Promise<EncryptedPayload> {
   try {
     const dataString = JSON.stringify(data);
-
-    const salt = randomBytes(SALT_LENGTH);
     const iv = randomBytes(IV_LENGTH);
 
-    const derivedKey = pbkdf2Sync(masterKey, salt, ITERATIONS, KEY_LENGTH, HASH_ALGORITHM);
+    let derivedKey: Buffer;
+    let saltBase64: string;
+
+    if (Buffer.isBuffer(keyOrPassword)) {
+      if (!providedSaltBase64) {
+        throw new Error("Ao usar uma chave pré-derivada (Buffer), o Salt é obrigatório.");
+      }
+      derivedKey = keyOrPassword;
+      saltBase64 = providedSaltBase64;
+    } else {
+      const salt = providedSaltBase64
+        ? Buffer.from(providedSaltBase64, "base64")
+        : randomBytes(SALT_LENGTH);
+
+      saltBase64 = salt.toString("base64");
+
+      derivedKey = pbkdf2Sync(
+        keyOrPassword,
+        salt,
+        ITERATIONS,
+        KEY_LENGTH,
+        HASH_ALGORITHM
+      );
+    }
 
     const cipher = createCipheriv(ALGORITHM, derivedKey, iv);
 
@@ -34,7 +64,7 @@ export async function encryptVault(masterKey: string, data: any): Promise<Encryp
 
     return {
       encryptedData: encrypted,
-      salt: salt.toString("base64"),
+      salt: saltBase64,
       iv: iv.toString("base64"),
       tag: tag.toString("base64"),
     };
@@ -44,7 +74,10 @@ export async function encryptVault(masterKey: string, data: any): Promise<Encryp
   }
 }
 
-export async function decryptVault(masterKey: string, payload: EncryptedPayload): Promise<any> {
+export async function decryptVault(
+  keyOrPassword: string | Buffer,
+  payload: EncryptedPayload
+): Promise<any> {
   try {
     const { encryptedData, salt, iv, tag } = payload;
 
@@ -52,7 +85,19 @@ export async function decryptVault(masterKey: string, payload: EncryptedPayload)
     const ivBytes = Buffer.from(iv, "base64");
     const tagBytes = Buffer.from(tag, "base64");
 
-    const derivedKey = pbkdf2Sync(masterKey, saltBytes, ITERATIONS, KEY_LENGTH, HASH_ALGORITHM);
+    let derivedKey: Buffer;
+
+    if (Buffer.isBuffer(keyOrPassword)) {
+      derivedKey = keyOrPassword;
+    } else {
+      derivedKey = pbkdf2Sync(
+        keyOrPassword,
+        saltBytes,
+        ITERATIONS,
+        KEY_LENGTH,
+        HASH_ALGORITHM
+      );
+    }
 
     const decipher = createDecipheriv(ALGORITHM, derivedKey, ivBytes);
 
@@ -64,6 +109,8 @@ export async function decryptVault(masterKey: string, payload: EncryptedPayload)
     return JSON.parse(decrypted);
   } catch (error) {
     console.error("Erro ao descriptografar:", error);
-    throw new Error("Falha ao descriptografar o cofre.");
+    throw new Error(
+      "Falha ao descriptografar o cofre. Chave mestra incorreta?"
+    );
   }
 }
