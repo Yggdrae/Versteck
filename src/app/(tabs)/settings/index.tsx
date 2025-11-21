@@ -1,5 +1,6 @@
 import { ThemedSafeAreaView } from "@/components/ThemedSafeArea";
 import ChangeMasterKeyDialog from "@/components/settings/ChangeMasterKeyDialog";
+import { useDeleteAccount } from "@/hooks/useRegister";
 import { useThemeSwitcher } from "@/providers/themeProvider";
 import { useUser } from "@/providers/userContext";
 import { File, Paths } from "expo-file-system";
@@ -15,6 +16,8 @@ export default function Settings() {
   const { replace } = useRouter();
   const { setMasterKey } = useUser();
   const [changeKeyVisible, setChangeKeyVisible] = useState(false);
+
+  const { mutateAsync: deleteAccount } = useDeleteAccount();
 
   const vaultFile = new File(Paths.document, "versteck_vault.json");
 
@@ -54,11 +57,12 @@ export default function Settings() {
             try {
               if (vaultFile.exists) {
                 await vaultFile.delete();
+                await deleteAccount();
               }
 
               setMasterKey("");
               replace("/");
-              Alert.alert("Reset", "O aplicativo foi resetado.");
+              Alert.alert("Sucesso", "Sua conta foi excluída.");
             } catch (e) {
               Alert.alert("Erro", "Falha ao apagar dados.");
               console.error(e);
@@ -106,18 +110,18 @@ export default function Settings() {
             onPress={() => setChangeKeyVisible(true)}
           />
 
-          <List.Item
+          {/* <List.Item
             title="Fazer Backup"
             description="Exporte seus dados criptografados"
             left={() => <List.Icon icon="cloud-upload" />}
             onPress={handleBackup}
-          />
+          /> */}
         </List.Section>
 
         <List.Section>
           <List.Subheader style={{ color: paperTheme.colors.error }}>Zona de Perigo</List.Subheader>
           <List.Item
-            title="Apagar Todos os Dados"
+            title="Apagar minha conta"
             titleStyle={{ color: paperTheme.colors.error }}
             left={() => <List.Icon icon="delete-forever" color={paperTheme.colors.error} />}
             onPress={handleWipeData}

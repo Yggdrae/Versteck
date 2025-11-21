@@ -44,3 +44,14 @@ export const useRegister = () =>
       console.error("Erro ao registrar", error);
     },
   });
+
+export const useDeleteAccount = () =>
+  useMutation({
+    mutationFn: async () => {
+      try {
+        await api.delete("/vaultData");
+      } catch (error) {
+        console.error("Falha ao apagar a conta: ", error);
+      }
+    },
+  });
