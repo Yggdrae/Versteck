@@ -8,8 +8,10 @@ import * as SecureStore from "expo-secure-store";
 export const useLogin = () =>
   useMutation({
     mutationFn: async (input: { email: string; masterKeyInput: string }) => {
-      const { data: saltData } = await api.get(`/auth/salt/${input.email}`);
-      const serverSalt = saltData.salt;
+      const { data: saltData } = await api.get(`/auth/kdfsalt/${input.email}`);
+      const serverSalt = saltData.kdfSalt;
+
+      console.log(serverSalt);
 
       if (!serverSalt) {
         throw new Error("Usuário não encontrado ou dados corrompidos.");
@@ -21,19 +23,25 @@ export const useLogin = () =>
 
       const { data: loginResponse } = await api.post("/auth/login", {
         email: input.email,
-        password: loginPassword,
+        senha: loginPassword,
       });
 
       const payload: EncryptedPayload = {
-        encryptedData: loginResponse.vaultData,
-        iv: loginResponse.vaultIv,
-        salt: loginResponse.kdfSalt,
-        tag: loginResponse.vaultTag,
+        encryptedData: loginResponse.vaultData.encryptedBlob,
+        iv: loginResponse.vaultData.vaultIV,
+        salt: serverSalt,
+        tag: loginResponse.vaultData.vaultTag,
       };
 
-      await decryptVault(masterKeyString, payload);
+      await decryptVault(masterKeyBuffer, payload);
 
-      await SecureStore.setItemAsync("auth_token", loginResponse.token);
+      const token = loginResponse.access_token;
+
+      if (!token) {
+        throw new Error("Token de autenticação inválido ou ausente.");
+      }
+
+      await SecureStore.setItemAsync("auth_token", token);
       await writeVaultFile(JSON.stringify(payload));
 
       return { masterKey: masterKeyString };

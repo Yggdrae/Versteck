@@ -4,33 +4,43 @@ import { generateSalt } from "@/service/generateSalt";
 import { deriveMasterKey, hashForLogin } from "@/service/hash";
 import { useMutation } from "@tanstack/react-query";
 
-export const useRegister = () => useMutation({
+export const useRegister = () =>
+  useMutation({
     mutationFn: async (input: { email: string; masterKeyInput: string }) => {
-        const saltBase64 = generateSalt();
+      const saltBase64 = generateSalt();
 
-        const masterKeyBuffer = deriveMasterKey(input.masterKeyInput, saltBase64);
-        const loginPassword = hashForLogin(masterKeyBuffer);
+      const masterKeyBuffer = deriveMasterKey(input.masterKeyInput, saltBase64);
+      const loginPassword = hashForLogin(masterKeyBuffer);
+      const masterKeyString = masterKeyBuffer.toString("base64");
 
-        const masterKeyString = masterKeyBuffer.toString("base64");
+      const encryptedVault = await encryptVault(masterKeyBuffer, [], saltBase64);
 
-        const encryptedVault = await encryptVault(masterKeyString, []);
+      const payloadToSend = {
+        email: input.email,
+        senha: loginPassword,
+        kdfSalt: saltBase64,
+        vaultIV: encryptedVault.iv,
+        vaultTag: encryptedVault.tag,
+        encryptedBlob: encryptedVault.encryptedData,
+      };
 
-        const payload = {
-            email: input.email,
-            password: loginPassword,
-            kdfSalt: saltBase64,
-            vaultIv: encryptedVault.iv,
-            vaultTag: encryptedVault.tag,
-            vaultData: encryptedVault.encryptedData,
-        };
+      const { data } = await api.post("/usuarios/create", payloadToSend);
 
-        const response = await api.post("/auth/register", payload);
-        return response.data;
+      return {
+        encryptedBlob: encryptedVault.encryptedData,
+        kdfSalt: saltBase64,
+        vaultIV: encryptedVault.iv,
+        vaultTag: encryptedVault.tag,
+        masterKey: masterKeyString,
+        userId: data.id,
+        userEmail: data.email,
+      };
     },
     onSuccess: (data) => {
-        console.log("Registro realizado com sucesso", data);
+      console.log("Registro realizado com sucesso", data);
+      return data;
     },
     onError: (error) => {
-        console.error("Erro ao registrar", error);
-    }
-});
+      console.error("Erro ao registrar", error);
+    },
+  });

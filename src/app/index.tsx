@@ -1,8 +1,7 @@
 import { ThemedSafeAreaView } from "@/components/ThemedSafeArea";
 import { ThemedView } from "@/components/ThemedView";
+import { useLogin } from "@/hooks/useLogin";
 import { useUser } from "@/providers/userContext";
-import { decryptVault, EncryptedPayload } from "@/service/encrypt";
-import { readVaultFile } from "@/service/storage";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Keyboard, StyleSheet, TouchableWithoutFeedback, View } from "react-native";
@@ -13,14 +12,14 @@ export default function Index() {
   const { replace, push } = useRouter();
   const { setMasterKey } = useUser();
 
+  const { mutateAsync: loginUser, isPending: isLoading } = useLogin();
+
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState("");
 
   const [masterKeyInput, setMasterKeyInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [masterKeyError, setMasterKeyError] = useState("");
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     let hasError = false;
@@ -37,29 +36,26 @@ export default function Index() {
     Keyboard.dismiss();
     setEmailError("");
     setMasterKeyError("");
-    setIsLoading(true);
 
     try {
-      const localContent = await readVaultFile();
+      const result = await loginUser({
+        email: emailInput,
+        masterKeyInput: masterKeyInput,
+      });
 
-      if (!localContent) {
-        setMasterKeyError("Nenhum cofre encontrado. Crie uma conta.");
-        setIsLoading(false);
-        return;
-      }
+      setMasterKey(result.masterKey);
 
-      const payload: EncryptedPayload = JSON.parse(localContent);
-
-      await decryptVault(masterKeyInput, payload);
-
-      setMasterKey(masterKeyInput);
       replace("/(tabs)/home");
+    } catch (error: any) {
+      console.error(error);
 
-    } catch (err) {
-      console.error(err);
-      setMasterKeyError("Chave mestra incorreta. Tente novamente.");
-    } finally {
-      setIsLoading(false);
+      if (error.message.includes("Usuário não encontrado")) {
+        setMasterKeyError("Email ou senha incorretos.");
+      } else if (error.response?.status === 401) {
+        setMasterKeyError("Email ou senha incorretos.");
+      } else {
+        setMasterKeyError("Falha na conexão ou login.");
+      }
     }
   };
 
@@ -67,7 +63,6 @@ export default function Index() {
     <ThemedSafeAreaView>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ThemedView style={styles.container}>
-
           <View style={styles.header}>
             <Avatar.Icon
               size={100}

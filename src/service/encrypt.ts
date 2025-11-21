@@ -1,10 +1,5 @@
 import { Buffer } from "buffer";
-const {
-  pbkdf2Sync,
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-} = require("react-native-quick-crypto");
+const { pbkdf2Sync, createCipheriv, createDecipheriv, randomBytes } = require("react-native-quick-crypto");
 
 const KEY_LENGTH = 32;
 const SALT_LENGTH = 16;
@@ -40,19 +35,11 @@ export async function encryptVault(
       derivedKey = keyOrPassword;
       saltBase64 = providedSaltBase64;
     } else {
-      const salt = providedSaltBase64
-        ? Buffer.from(providedSaltBase64, "base64")
-        : randomBytes(SALT_LENGTH);
+      const salt = providedSaltBase64 ? Buffer.from(providedSaltBase64, "base64") : randomBytes(SALT_LENGTH);
 
       saltBase64 = salt.toString("base64");
 
-      derivedKey = pbkdf2Sync(
-        keyOrPassword,
-        salt,
-        ITERATIONS,
-        KEY_LENGTH,
-        HASH_ALGORITHM
-      );
+      derivedKey = pbkdf2Sync(keyOrPassword, salt, ITERATIONS, KEY_LENGTH, HASH_ALGORITHM);
     }
 
     const cipher = createCipheriv(ALGORITHM, derivedKey, iv);
@@ -74,10 +61,7 @@ export async function encryptVault(
   }
 }
 
-export async function decryptVault(
-  keyOrPassword: string | Buffer,
-  payload: EncryptedPayload
-): Promise<any> {
+export async function decryptVault(keyOrPassword: string | Buffer, payload: EncryptedPayload): Promise<any> {
   try {
     const { encryptedData, salt, iv, tag } = payload;
 
@@ -90,13 +74,7 @@ export async function decryptVault(
     if (Buffer.isBuffer(keyOrPassword)) {
       derivedKey = keyOrPassword;
     } else {
-      derivedKey = pbkdf2Sync(
-        keyOrPassword,
-        saltBytes,
-        ITERATIONS,
-        KEY_LENGTH,
-        HASH_ALGORITHM
-      );
+      derivedKey = pbkdf2Sync(keyOrPassword, saltBytes, ITERATIONS, KEY_LENGTH, HASH_ALGORITHM);
     }
 
     const decipher = createDecipheriv(ALGORITHM, derivedKey, ivBytes);
@@ -109,8 +87,6 @@ export async function decryptVault(
     return JSON.parse(decrypted);
   } catch (error) {
     console.error("Erro ao descriptografar:", error);
-    throw new Error(
-      "Falha ao descriptografar o cofre. Chave mestra incorreta?"
-    );
+    throw new Error("Falha ao descriptografar o cofre. Chave mestra incorreta?");
   }
 }

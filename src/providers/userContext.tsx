@@ -1,43 +1,35 @@
-import React, {
-  createContext,
-  Dispatch,
-  ReactNode,
-  SetStateAction,
-  useContext,
-  useState,
-} from "react";
+import React, { createContext, Dispatch, ReactNode, SetStateAction, useContext, useState } from "react";
 
 type UserContextType = {
-  user: string;
-  setUser: Dispatch<SetStateAction<string>>;
+  userId: string;
+  setUserId: Dispatch<SetStateAction<string>>;
+  userEmail: string;
+  setUserEmail: Dispatch<SetStateAction<string>>;
   masterKey: string;
   setMasterKey: Dispatch<SetStateAction<string>>;
 };
 
-export const UserInfoContext = createContext<UserContextType | undefined>(
-  undefined
-);
+export const UserInfoContext = createContext<UserContextType | undefined>(undefined);
 
 type UserInfoProviderProps = {
   children: ReactNode;
 };
 
 export const UserInfoProvider = ({ children }: UserInfoProviderProps) => {
-  const [user, setUser] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
   const [masterKey, setMasterKey] = useState<string>("");
 
   const contextValue: UserContextType = {
-    user,
-    setUser,
+    userId,
+    setUserId,
+    userEmail,
+    setUserEmail,
     masterKey,
     setMasterKey,
   };
 
-  return (
-    <UserInfoContext.Provider value={contextValue}>
-      {children}
-    </UserInfoContext.Provider>
-  );
+  return <UserInfoContext.Provider value={contextValue}>{children}</UserInfoContext.Provider>;
 };
 
 export const useUser = () => {
