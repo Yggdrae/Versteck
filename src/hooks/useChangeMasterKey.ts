@@ -1,8 +1,10 @@
+import { IPassword } from "@/interface/password";
 import { useUser } from "@/providers/userContext";
 import { api } from "@/service/api";
 import { decryptVault, EncryptedPayload, encryptVault } from "@/service/encrypt";
-import { deriveMasterKey, hashForLogin } from "@/service/hash"; // <--- Importar isto
+import { deriveMasterKey, hashForLogin } from "@/service/hash";
 import { readVaultFile, writeVaultFile } from "@/service/storage";
+import { Buffer } from "buffer";
 
 export const useChangeMasterKey = () => {
   const { setMasterKey } = useUser();
@@ -12,36 +14,42 @@ export const useChangeMasterKey = () => {
 
     try {
       const content = await readVaultFile();
+      let currentPayload: EncryptedPayload;
+      let currentVault: IPassword[] = [];
+      let currentSalt: string | undefined;
 
-      if (!content) {
-        setMasterKey(newKey);
-        return true;
+      if (content) {
+        currentPayload = JSON.parse(content);
+        currentSalt = currentPayload.salt;
+      } else {
+        throw new Error("Cofre não inicializado. Faça login novamente.");
       }
 
-      const payload: EncryptedPayload = JSON.parse(content);
+      const derivedMasterKey = deriveMasterKey(oldKey, currentSalt);
+      const masterKeyString = derivedMasterKey.toString("base64");
+      const masterKeyBuffer = Buffer.from(masterKeyString, "base64");
 
-      const currentVaultData = await decryptVault(oldKey, payload);
+      currentVault = await decryptVault(masterKeyBuffer, currentPayload);
 
       console.log("Criptografando com nova chave...");
 
-      const newPayload = await encryptVault(newKey, currentVaultData);
-
-      const fileString = JSON.stringify(newPayload);
-      await writeVaultFile(fileString);
-
-      const newSalt = newPayload.salt;
-      const newMasterKeyBuffer = deriveMasterKey(newKey, newSalt);
+      const newMasterKeyBuffer = deriveMasterKey(newKey, currentSalt);
       const newLoginHash = hashForLogin(newMasterKeyBuffer);
+      const newMasterKeyString = newMasterKeyBuffer.toString("base64");
 
-      await api.put("/vault", {
-        vaultData: newPayload.encryptedData,
-        vaultIv: newPayload.iv,
-        vaultTag: newPayload.tag,
-        kdfSalt: newPayload.salt,
-        password: newLoginHash,
+      const newPayload = await encryptVault(newMasterKeyBuffer, currentVault, currentSalt);
+
+      await writeVaultFile(JSON.stringify(newPayload));
+
+      await api.put("/usuarios/update", {
+        novoEncryptedBlob: newPayload.encryptedData,
+        novoVaultIV: newPayload.iv,
+        novoVaultTag: newPayload.tag,
+        novoKdfSalt: newPayload.salt,
+        novaSenha: newLoginHash,
       });
 
-      setMasterKey(newKey);
+      setMasterKey(newMasterKeyString);
 
       console.log("Chave Mestra e Senha de Login alteradas e sincronizadas!");
       return true;
