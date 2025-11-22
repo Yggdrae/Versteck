@@ -5,6 +5,7 @@ import { darkTheme, lightTheme } from "@/theme/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
+import { usePreventScreenCapture } from "expo-screen-capture";
 import { StatusBar } from "expo-status-bar";
 import * as Updates from "expo-updates";
 import { useEffect } from "react";
@@ -14,6 +15,8 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  usePreventScreenCapture();
+  
   const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular: require("@/assets/fonts/Poppins-Regular.ttf"),
     Poppins_500Medium: require("@/assets/fonts/Poppins-Medium.ttf"),
